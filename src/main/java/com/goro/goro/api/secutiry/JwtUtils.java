@@ -37,7 +37,13 @@ public class JwtUtils {
     }
 
     private Key key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            logger.error("Error decoding or creating secret key: {}", e.getMessage());
+            throw new RuntimeException("Failed to create secret key", e);
+        }
     }
 
     public String getUserNameFromJwtToken(String token) {
@@ -57,6 +63,8 @@ public class JwtUtils {
             logger.error("JWT token is unsupported: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
             logger.error("JWT claims string is empty: {}", e.getMessage());
+        } catch (Exception e) { // Catch any other exceptions
+            logger.error("An unexpected error occurred during JWT validation: {}", e.getMessage(), e);
         }
 
         return false;
